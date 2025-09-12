@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "fetch": "node scripts/fetch.js"
+    "fetch": "node fetch.js"
   },
   "engines": {
     "node": ">=18"
