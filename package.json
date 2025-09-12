@@ -1,7 +1,6 @@
 {
   "name": "prices-publisher",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "fetch": "node fetch.js"
   },
