@@ -2,8 +2,7 @@ name: Update prices and publish to GitHub Pages
 
 on:
   schedule:
-    # co 30 minut (cron jest w UTC)
-    - cron: '*/30 * * * *'
+    - cron: '*/30 * * * *'   # co 30 minut (UTC)
   workflow_dispatch: {}
 
 permissions:
@@ -27,17 +26,53 @@ jobs:
 
       - name: Install (optional)
         run: |
-          if [ -f package.json ]; then npm ci; fi
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            echo "package-lock.json found -> using npm ci"
+            npm ci --no-audit --no-fund
+          elif [ -f package.json ]; then
+            echo "package.json found but no lockfile -> using npm install"
+            npm install --no-audit --no-fund
+          else
+            echo "No package.json found -> skipping npm install"
+          fi
 
       - name: Run fetch script
         env:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
-          # uruchom Twój skrypt; zakładam że zapisuje pliki do ./out i do ./prices.json
-          npm run fetch || node fetch.js
+          set -euo pipefail
+          echo "Szukam i uruchamiam fetch script..."
+
+          # preferowany lokal: scripts/fetch.js
+          if [ -f ./scripts/fetch.js ]; then
+            echo "Uruchamiam node ./scripts/fetch.js"
+            node ./scripts/fetch.js
+            exit 0
+          fi
+
+          # alternatywa: fetch.js w katalogu głównym
+          if [ -f ./fetch.js ]; then
+            echo "Uruchamiam node ./fetch.js"
+            node ./fetch.js
+            exit 0
+          fi
+
+          # fallback: npm run fetch (jeśli istnieje skrypt)
+          if [ -f package.json ] && grep -q '"fetch"' package.json; then
+            echo "Uruchamiam npm run fetch"
+            npm run fetch
+            exit 0
+          fi
+
+          echo "::error ::Nie znaleziono skryptu fetch do uruchomienia (szukano: ./scripts/fetch.js, ./fetch.js, npm run fetch)."
+          echo "Listing repo (root):"
+          ls -la
+          exit 1
 
       - name: Ensure out exists and add index.html
         run: |
+          set -euo pipefail
           mkdir -p out
           cat > out/index.html <<'HTML'
           <!doctype html>
@@ -48,14 +83,12 @@ jobs:
           <p>Ostatnia aktualizacja: $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
           HTML
 
-          # jeśli prices.json leży w repo root, skopiuj do out
           if [ -f ./prices.json ]; then cp ./prices.json ./out/prices.json; fi
 
       - name: Upload artifact for Pages
         id: upload
         uses: actions/upload-pages-artifact@v3
         with:
-          # ścieżka do folderu zawierającego statyczne pliki strony
           path: out/
 
   deploy:
