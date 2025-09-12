@@ -34,7 +34,7 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           # uruchom Twój skrypt; zakładam że zapisuje pliki do ./out i do ./prices.json
-          npm run fetch || node scripts/fetch.js
+          npm run fetch || node fetch.js
 
       - name: Ensure out exists and add index.html
         run: |
