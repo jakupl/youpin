@@ -2,7 +2,7 @@ name: Update prices and publish to GitHub Pages
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # co 30 minut (UTC)
+   # - cron: '*/30 * * * *'   # co 30 minut (UTC)
   workflow_dispatch: {}
 
 permissions:
