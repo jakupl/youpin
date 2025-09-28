@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 
-const apiKey = process.env.API_KEY || "8R4voOJHFLcxte3GhBMNKjSmkpQRO7k8bsR6TypaOS5O-cKdzK";
+const apiKey = process.env.API_KEY || ;
 
 if (!apiKey) {
   console.error("Brak klucza API. Ustaw zmienną środowiskową API_KEY.");
@@ -66,5 +66,6 @@ async function getData() {
     process.exit(1);
   }
 }
+
 
 getData();
