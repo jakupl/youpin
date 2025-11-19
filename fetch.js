@@ -1,73 +1,51 @@
-const fs = require("fs");
-const path = require("path");
+// saveData.js
+const fs = require('fs');
+const path = require('path');
 
-
-const apiKey = "8R4voOJHFLcxte3GhBMNKjSmkpQRO7k8bsR6TypaOS5O-cKdzK";
-
-if (!apiKey) {
-  console.error("Brak klucza API. Ustaw zmienną środowiskową API_KEY.");
-  process.exit(1);
+const API_KEY = process.env.BUFF_API_KEY || "8R4voOJHFLcxte3GhBMNKjSmkpQRO7k8bsR6TypaOS5O-cKdzK"; // lepiej trzymać klucz w GitHub Secret
+if (!API_KEY) {
+  console.warn("Nie ustawiono BUFF_API_KEY. Używasz przykładowego URL (jeśli podałeś w kodzie).");
 }
 
-const url = `https://skins-table.com/api_v2/items?apikey=${apiKey}&app=730&site=YOUPIN898`;
+const url = process.env.BUFF_API_URL || `https://skins-table.com/api_v2/items?apikey=${API_KEY}&app=730&site=YOUPIN898`;
+const outDir = path.join(process.cwd(), 'docs'); // zapis do docs/ (GitHub Pages)
+const outFile = path.join(outDir, 'buffPriceList.json');
 
-async function getData() {
-  console.log("Pobieranie danych z API...");
+async function saveData() {
   try {
-    const res = await fetch(url, {
-      headers: {
-        "accept": "application/json",
-        "Referer": "https://skins-table.com/api_v2/apidoc/"
-      }
-    });
+    // upewnij się, że katalog docs istnieje
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
-    const text = await res.text();
-    if (!res.ok) {
-      throw new Error(`Błąd HTTP ${res.status} - ${text}`);
-    }
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Błąd HTTP: ${response.status}`);
 
-    const data = JSON.parse(text);
+    const data = await response.json();
 
-    if (!data.items || typeof data.items !== "object") {
-      throw new Error("Nieprawidłowa odpowiedź z API: brak pola 'items' lub ma ono zły format.");
-    }
+    const transformed = { items: {} };
 
-    const transformed = {};
-    for (const [key, val] of Object.entries(data.items)) {
+    for (const [name, values] of Object.entries(data.items || {})) {
+      const price = values.p;
+      const stock = values.c;
 
-      if (typeof val.c === "number" && typeof val.p === "number" && val.c > 12 && val.p >= 70) {
-        transformed[key] = { price: val.p, count: val.c };
-      }
-    }
+  const priceConverted = +(price / 7.1).toFixed(2);
 
-    const itemCount = Object.keys(transformed).length;
-
-    const payload = { items: transformed };
-    const payloadString = JSON.stringify(payload, null, 2);
-
-    const outDir = path.join(__dirname, "out");
-    const rootFilePath = path.join(__dirname, "prices.json");
-    const outFilePath = path.join(outDir, "prices.json");
-
-    if (!fs.existsSync(outDir)) {
-      fs.mkdirSync(outDir, { recursive: true });
-    }
-
-    fs.writeFileSync(rootFilePath, payloadString, "utf8");
-    fs.writeFileSync(outFilePath, payloadString, "utf8");
-
-    console.log(`\nZakończono pomyślnie!`);
-    console.log(`Zapisano ${itemCount} przedmiotów w plikach:`);
-    console.log(`-> ${rootFilePath}`);
-    console.log(`-> ${outFilePath}`);
-
-  } catch (err) {
-    console.error("\nWystąpił błąd podczas wykonywania skryptu:", err.message);
-    process.exit(1);
+  if (typeof stock === 'number' && stock >= 1) {
+    transformed.items[name] = {
+      price: priceConverted,
+      stock: stock,
+    };
   }
 }
 
+    // dodaj timestamp (przydatne debugowanie)
+    transformed.generated_at = new Date().toISOString();
 
-getData();
+    fs.writeFileSync(outFile, JSON.stringify(transformed, null, 2), 'utf-8');
+    console.log(`Dane zapisane -> ${outFile}`);
+  } catch (err) {
+    console.error("Błąd pobierania danych:", err && err.message ? err.message : err);
+    process.exitCode = 1;
+  }
+}
 
-
+saveData();
