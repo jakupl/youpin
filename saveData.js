@@ -9,7 +9,7 @@ if (!API_KEY) {
 
 const url = process.env.BUFF_API_URL || `https://skins-table.com/api_v2/items?apikey=${API_KEY}&app=730&site=YOUPIN898`;
 const outDir = path.join(process.cwd(), 'docs'); // zapis do docs/ (GitHub Pages)
-const outFile = path.join(outDir, 'buffPriceList.json');
+const outFile = path.join(outDir, 'youpinPriceList.json');
 
 async function saveData() {
   try {
@@ -49,3 +49,4 @@ async function saveData() {
 }
 
 saveData();
+
