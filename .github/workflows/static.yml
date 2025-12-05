@@ -2,8 +2,8 @@ name: Update UU price list
 
 on:
   schedule:
-    # 00:00, 06:00, 09:00, 12:00, 15:00, 18:00, 20:00, 22:00
-#   - cron: '0 23,5,8,11,14,17,19,21 * * *' 
+      # 00:00, 06:00, 09:00, 12:00, 15:00, 18:00, 20:00, 22:00
+    - cron: '0 23,5,8,11,14,17,19,21 * * *' 
   workflow_dispatch: {}
 
 permissions:
@@ -48,3 +48,4 @@ jobs:
         env:
           # GITHUB_TOKEN jest automatycznie dostępny w runnerze
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
