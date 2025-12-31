@@ -1,51 +1,41 @@
-name: Update UU price list
+name: Update YouPin price list
 
 on:
-  schedule: 
-      # 00 | 04 | 08 | 12 | 16 | 20
-    - cron: '0 23,3,7,11,15,19 * * *' 
+  schedule:
+    # 00 | 04 | 08 | 12 | 16 | 20 (UTC+?)
+    - cron: '0 23,3,7,11,15,19 * * *'
   workflow_dispatch: {}
 
 permissions:
-  contents: write   
+  contents: write   # wymagane do publikacji gh-pages
 
 jobs:
-  update:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Install deps (if any)
-        run: |
-          # brak zależności w tym przykładzie; jeśli dodasz pakiety, zainstaluj je tutaj
-          echo "No dependencies"
+          node-version: 20
 
       - name: Generate youpinPriceList.json
         env:
           BUFF_API_KEY: ${{ secrets.BUFF_API_KEY }}
           BUFF_API_URL: ${{ secrets.BUFF_API_URL }} # opcjonalne
-        run: node saveData.js
-
-      - name: Commit generated file if changed
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/youpinPriceList.json || true
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "chore: update youpinPriceList.json"
-            git push
-          fi
-        env:
-          # GITHUB_TOKEN jest automatycznie dostępny w runnerze
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          node saveData.js
 
+      # 🔑 KLUCZOWY KROK – publikacja na GitHub Pages
+      - name: Deploy to GitHub Pages (gh-pages)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./docs
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
