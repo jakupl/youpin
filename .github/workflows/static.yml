@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # wymagane do publikacji gh-pages
+  contents: write   
 
 jobs:
   build-and-deploy:
@@ -25,11 +25,10 @@ jobs:
       - name: Generate youpinPriceList.json
         env:
           BUFF_API_KEY: ${{ secrets.BUFF_API_KEY }}
-          BUFF_API_URL: ${{ secrets.BUFF_API_URL }} # opcjonalne
+          BUFF_API_URL: ${{ secrets.BUFF_API_URL }}
         run: |
           node saveData.js
 
-      # 🔑 KLUCZOWY KROK – publikacja na GitHub Pages
       - name: Deploy to GitHub Pages (gh-pages)
         uses: peaceiris/actions-gh-pages@v3
         with:
