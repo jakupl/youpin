@@ -1,13 +1,13 @@
 name: Update UU price list
 
 on:
-  schedule:
-      # 00:00, 06:00, 09:00, 12:00, 15:00, 18:00, 20:00, 22:00
-    - cron: '0 23,5,8,11,14,17,19,21 * * *' 
+  schedule: 
+      # 00 | 04 | 08 | 12 | 16 | 20
+    - cron: '0 23,3,7,11,15,19 * * *' 
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # potrzebne do pushowania zmian przez GITHUB_TOKEN
+  contents: write   
 
 jobs:
   update:
