@@ -1,5 +1,4 @@
-// saveData.js
-// Node 18+ (Actions runner: Node 20) - używa global fetch
+
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -10,12 +9,11 @@ const BUFF_API_URL = process.env.BUFF_API_URL || `https://skins-table.com/api_v2
 const outDirDocs = path.join(process.cwd(), 'docs');
 const outFileDocs = path.join(outDirDocs, 'youpinPriceList.json');
 
-// target for gh-pages branch (root file)
 const tmpDir = path.join(process.cwd(), 'gh-pages-temp');
 const outFileGhPages = path.join(tmpDir, 'youpinPriceList.json');
 
-const GITHUB_REPOSITORY = process.env.GITHUB_REPOSITORY; // e.g. "jakupl/youpin"
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Actions provides this automatically
+const GITHUB_REPOSITORY = process.env.GITHUB_REPOSITORY;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
 const GIT_CLONE_URL = GITHUB_REPOSITORY && GITHUB_TOKEN
   ? `https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git`
   : null;
@@ -32,13 +30,11 @@ async function fetchData(url) {
 function transformData(raw) {
   const transformed = { items: {} };
 
-  // data.items expected shape like w twoim przykładzie
   for (const [name, values] of Object.entries(raw.items || {})) {
     const price = values.p;
     const stock = values.c;
 
-    // konwersja kursu - zachowuję /7.1 jak w Twoim kodzie
-    const priceConverted = (typeof price === 'number') ? +(price / 7.1).toFixed(2) : null;
+    const priceConverted = (typeof price === 'number') ? +(price / 7).toFixed(2) : null;
 
     if (typeof stock === 'number' && stock >= 1 && priceConverted !== null) {
       transformed.items[name] = {
@@ -72,7 +68,6 @@ function safeExec(cmd, opts = {}) {
   try {
     return execSync(cmd, { stdio: 'inherit', ...opts });
   } catch (err) {
-    // rethrow with message to allow upstream handling
     throw new Error(`Command failed: ${cmd}\n${err.message}`);
   }
 }
@@ -93,24 +88,18 @@ function publishToGhPages(localFilePath) {
     log('Klonuję gałąź gh-pages do tymczasowego katalogu...');
     safeExec(cloneCmd);
   } catch (err) {
-    // gałąź może nie istnieć — utworzymy ją lokalnie
     branchExists = false;
     log('Gałąź gh-pages nie istnieje — utworzę nowy branch w katalogu tymczasowym.');
     safeExec(`git init "${tmpDir}"`);
-    // ustaw remote
     safeExec(`git -C "${tmpDir}" remote add origin "${GIT_CLONE_URL}"`);
-    // stwórz pustą gałąź gh-pages
     safeExec(`git -C "${tmpDir}" checkout --orphan gh-pages`);
   }
 
-  // skopiuj plik do tmpDir (nadpisz)
   fs.copyFileSync(localFilePath, outFileGhPages);
   log('Skopiowano plik do gałęzi gh-pages (tymczasowo).');
 
-  // commit tylko gdy zmiany
   try {
     safeExec(`git -C "${tmpDir}" add -A`);
-    // sprawdź czy są zmiany do commita
     let diffOutput;
     try {
       diffOutput = execSync(`git -C "${tmpDir}" diff --staged --quiet && echo "NO_CHANGES" || echo "HAS_CHANGES"`, { encoding: 'utf8' }).trim();
@@ -136,8 +125,6 @@ function publishToGhPages(localFilePath) {
   } catch (err) {
     throw new Error('Błąd podczas commita/push: ' + err.message);
   } finally {
-    // cleanup
-    // rmDirRecursive(tmpDir); // opcjonalnie pozostawić do debugu
   }
 }
 
@@ -146,15 +133,12 @@ function publishToGhPages(localFilePath) {
     const raw = await fetchData(BUFF_API_URL);
     const transformed = transformData(raw);
 
-    // Zapisz także w docs/ (żeby Twój istniejący krok commitowania mógł zadziałać)
     writeDocsFile(transformed);
 
-    // Publikuj do gh-pages (jeśli token jest dostępny)
     try {
       publishToGhPages(outFileDocs);
     } catch (err) {
       console.error('[saveData] Błąd publikacji do gh-pages:', err.message);
-      // nie przerywamy całego procesu — zapis do docs już mamy
     }
 
     log('Koniec.');
@@ -163,3 +147,4 @@ function publishToGhPages(localFilePath) {
     process.exitCode = 1;
   }
 })();
+
